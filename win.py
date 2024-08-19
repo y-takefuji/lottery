@@ -30,34 +30,21 @@ for numbers in winning_numbers:
 # Normalize the correlation matrix
 correlation_matrix = correlation_matrix.div(correlation_matrix.max().max())
 
-print("\nCorrelation Matrix for Top Forty Numbers:")
-print(correlation_matrix.loc[[num for num, _ in top_forty_numbers], [num for num, _ in top_forty_numbers]])
+# Extract the top forty correlation matrix
+top_forty_matrix = correlation_matrix.loc[[num for num, _ in top_forty_numbers], [num for num, _ in top_forty_numbers]]
 
-# Generate top twenty sets of 5 2-digit numbers based on maximum correlations
-top_sets = []
-top_set_values = []
-used_numbers = set()
-for _ in range(20):
-    top_set = []
-    remaining_numbers = set(correlation_matrix.index) - used_numbers
-    while len(top_set) < 5 and remaining_numbers:
-        if not top_set:
-            num = max(remaining_numbers, key=lambda x: frequency[x])
-        else:
-            num = max(remaining_numbers, key=lambda x: sum(correlation_matrix.at[x, y] for y in top_set))
-        top_set.append(num)
-        remaining_numbers.remove(num)
-    if len(top_set) == 5:
-        top_sets.append(top_set)
-        used_numbers.update(top_set)
-        # Calculate the maximized value for the set
-        set_value = sum(correlation_matrix.at[num1, num2] for num1, num2 in itertools.combinations(top_set, 2))
-        top_set_values.append(set_value)
+# Create a new DataFrame to include headers and indices
+matrix_with_headers = pd.DataFrame(index=[''] + [num for num, _ in top_forty_numbers], columns=[''] + [num for num, _ in top_forty_numbers])
 
-# Sort the sets based on their maximized values in descending order
-sorted_sets = sorted(zip(top_sets, top_set_values), key=lambda x: x[1], reverse=True)
+# Fill the headers
+matrix_with_headers.iloc[0, 1:] = [num for num, _ in top_forty_numbers]
+matrix_with_headers.iloc[1:, 0] = [num for num, _ in top_forty_numbers]
 
-print("\nTop Twenty Sets of 5 2-Digit Numbers Based on Maximum Correlations (Sorted):")
-for i, (top_set, set_value) in enumerate(sorted_sets, 1):
-    print(f"Set {i}: {top_set}, Maximized Value: {set_value:.2f}")
+# Fill the matrix values
+for i, num1 in enumerate([num for num, _ in top_forty_numbers]):
+    for j, num2 in enumerate([num for num, _ in top_forty_numbers]):
+        matrix_with_headers.iloc[i + 1, j + 1] = f'{top_forty_matrix.loc[num1, num2]:.2f}'
+
+# Save the matrix as a CSV file with space separators
+matrix_with_headers.to_csv('correlation_matrix.csv', sep=',', index=False, header=False)
 
